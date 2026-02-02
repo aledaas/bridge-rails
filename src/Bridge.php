@@ -2,7 +2,8 @@
 
 namespace Aledaas\BridgeRails;
 
-use Aledaas\BridgeRails\Resources\{BalancesResource,
+use Aledaas\BridgeRails\Resources\{
+    BalancesResource,
     CryptoReturnPoliciesResource,
     CustomersResource,
     DrainsResource,
@@ -21,7 +22,8 @@ use Aledaas\BridgeRails\Resources\{BalancesResource,
     DevelopersResource,
     ExchangeRatesResource,
     BatchSettlementSchedulesResource,
-    FundsRequestsResource};
+    FundsRequestsResource
+};
 
 class Bridge
 {
@@ -45,6 +47,6 @@ class Bridge
     public function exchangeRates(): ExchangeRatesResource { return new ExchangeRatesResource($this->client); }
     public function batchSettlementSchedules(): BatchSettlementSchedulesResource { return new BatchSettlementSchedulesResource($this->client); }
     public function fundsRequests(): FundsRequestsResource { return new FundsRequestsResource($this->client); }
-    public function cryptoReturnPolicies(): CryptoReturnPoliciesResource { return new CryptoReturnPoliciesResource($this->client);}
+    public function cryptoReturnPolicies(): CryptoReturnPoliciesResource { return new CryptoReturnPoliciesResource($this->client); }
     public function rewards(): RewardsResource { return new RewardsResource($this->client); }
 }
