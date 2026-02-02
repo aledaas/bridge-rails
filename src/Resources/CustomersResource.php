@@ -33,9 +33,9 @@ class CustomersResource extends BaseResource
      * PUT /customers/{customerID}
      * (En tu cURL no usa Idempotency-Key; lo dejamos opcional por si Bridge lo acepta.)
      */
-    public function update(string $customerId, array $payload, ?string $idempotencyKey = null): array
+    public function update(string $id, array $payload): array
     {
-        return $this->client->put("/customers/{$customerId}", $payload, $idempotencyKey);
+        return $this->client->put("/v0/customers/{$id}", $payload);
     }
 
     /**

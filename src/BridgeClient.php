@@ -19,7 +19,7 @@ class BridgeClient
         private readonly int $retrySleepMs = 200,
     ) {}
 
-    private function http(?string $idempotencyKey = null): PendingRequest
+    private function http(string $method = 'GET', ?string $idempotencyKey = null): PendingRequest
     {
         $base = rtrim($this->baseUrl, '/');
         $prefix = '/' . ltrim($this->apiPrefix, '/');
@@ -32,7 +32,10 @@ class BridgeClient
             ->timeout($this->timeoutSeconds)
             ->retry($this->retries, $this->retrySleepMs);
 
-        if ($idempotencyKey) {
+        $methodUpper = strtoupper($method);
+
+        // Bridge: Idempotency-Key solo para POST (creación).
+        if (!empty($idempotencyKey) && $methodUpper === 'POST') {
             $req = $req->withHeaders(['Idempotency-Key' => $idempotencyKey]);
         }
 
@@ -41,21 +44,21 @@ class BridgeClient
 
     public function get(string $path, array $query = []): array
     {
-        $resp = $this->http()->get($this->normalizePath($path), $query);
+        $resp = $this->http('GET')->get($this->normalizePath($path), $query);
         return $this->handle($resp);
     }
 
     public function post(string $path, array $payload, ?string $idempotencyKey = null): array
     {
         $idempotencyKey ??= (string) Str::uuid();
-        $resp = $this->http($idempotencyKey)->post($this->normalizePath($path), $payload);
+        $resp = $this->http('POST', $idempotencyKey)->post($this->normalizePath($path), $payload);
         return $this->handle($resp);
     }
 
     public function postRaw(string $path, array $payload = [], ?string $idempotencyKey = null): string
     {
         $idempotencyKey ??= (string) Str::uuid();
-        $resp = $this->http($idempotencyKey)->post($this->normalizePath($path), $payload);
+        $resp = $this->http('POST', $idempotencyKey)->post($this->normalizePath($path), $payload);
 
         if ($resp->successful()) {
             return (string) $resp->body();
@@ -71,23 +74,23 @@ class BridgeClient
         );
     }
 
-    public function put(string $path, array $payload, ?string $idempotencyKey = null): array
+    // ❗ PUT sin Idempotency-Key
+    public function put(string $path, array $payload): array
     {
-        $idempotencyKey ??= (string) Str::uuid();
-        $resp = $this->http($idempotencyKey)->put($this->normalizePath($path), $payload);
+        $resp = $this->http('PUT')->put($this->normalizePath($path), $payload);
         return $this->handle($resp);
     }
 
     public function delete(string $path, array $query = []): array
     {
-        $resp = $this->http()->delete($this->normalizePath($path), $query);
+        $resp = $this->http('DELETE')->delete($this->normalizePath($path), $query);
         return $this->handle($resp);
     }
 
-    public function patch(string $path, array $payload, ?string $idempotencyKey = null): array
+    // ❗ PATCH sin Idempotency-Key
+    public function patch(string $path, array $payload): array
     {
-        $idempotencyKey ??= (string) \Illuminate\Support\Str::uuid();
-        $resp = $this->http($idempotencyKey)->patch($this->normalizePath($path), $payload);
+        $resp = $this->http('PATCH')->patch($this->normalizePath($path), $payload);
         return $this->handle($resp);
     }
 
