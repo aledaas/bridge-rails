@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+
+# PHP / Composer
+/vendor/
+composer.lock
+
+# Node (si algún package lo usa)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.*
+
+# PHPUnit
+.phpunit.result.cache
+
+# Build artifacts
+/build/
+/dist/
