@@ -35,7 +35,7 @@ class CustomersResource extends BaseResource
      */
     public function update(string $id, array $payload): array
     {
-        return $this->client->put("/v0/customers/{$id}", $payload);
+        return $this->client->put("/customers/{$id}", $payload);
     }
 
     /**

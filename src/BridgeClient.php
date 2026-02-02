@@ -74,7 +74,6 @@ class BridgeClient
         );
     }
 
-    // ❗ PUT sin Idempotency-Key
     public function put(string $path, array $payload): array
     {
         $resp = $this->http('PUT')->put($this->normalizePath($path), $payload);
