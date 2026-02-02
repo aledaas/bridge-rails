@@ -5,15 +5,20 @@ namespace Aledaas\BridgeRails\Resources;
 class ExchangeRatesResource extends BaseResource
 {
     /**
-     * Get current exchange rate between two currencies.
+     * Get current exchange rate from one currency to another.
      *
-     * GET /exchange_rates
-     *
-     * Typical query example (depends on Bridge docs):
-     * [
-     *   'from' => 'USD',
-     *   'to'   => 'EUR',
-     * ]
+     * Bridge endpoint: GET /exchange_rates?from=usd&to=eur
+     */
+    public function rate(string $from, string $to): array
+    {
+        return $this->client->get('/exchange_rates', [
+            'from' => strtolower($from),
+            'to'   => strtolower($to),
+        ]);
+    }
+
+    /**
+     * Low-level access if you prefer passing the query directly.
      */
     public function get(array $query = []): array
     {
