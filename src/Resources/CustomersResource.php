@@ -2,6 +2,8 @@
 
 namespace Aledaas\BridgeRails\Resources;
 
+use RuntimeException;
+
 class CustomersResource extends BaseResource
 {
     /**
@@ -19,6 +21,42 @@ class CustomersResource extends BaseResource
     public function create(array $payload, ?string $idempotencyKey = null): array
     {
         return $this->client->post('/customers', $payload, $idempotencyKey);
+    }
+
+    /**
+     * Helper: Genera signed_agreement_id automáticamente (si falta) y crea el customer.
+     *
+     * Esto reduce fricción: el usuario no tiene que hacer un paso previo para obtener el signed_agreement_id.
+     *
+     * Endpoint usado:
+     * POST /dashboard/generate_signed_agreement_id
+     * Body: {"customer_id":"","type":"tos","version":"v5"}
+     */
+    public function createWithAutoSignedAgreement(array $payload, ?string $idempotencyKey = null): array
+    {
+        if (empty($payload['signed_agreement_id'])) {
+            $signed = $this->client->post(
+                '/dashboard/generate_signed_agreement_id',
+                [
+                    'customer_id' => '',
+                    'type' => 'tos',
+                    'version' => 'v5',
+                ],
+                // importante: idempotency key distinta a la de /customers si querés evitar colisiones
+                // si no te importa, podés pasar null acá
+                $idempotencyKey ? ($idempotencyKey . ':signed') : null
+            );
+
+            $signedAgreementId = $signed['signed_agreement_id'] ?? null;
+
+            if (!is_string($signedAgreementId) || $signedAgreementId === '') {
+                throw new RuntimeException('Bridge did not return signed_agreement_id from /dashboard/generate_signed_agreement_id');
+            }
+
+            $payload['signed_agreement_id'] = $signedAgreementId;
+        }
+
+        return $this->create($payload, $idempotencyKey);
     }
 
     /**
