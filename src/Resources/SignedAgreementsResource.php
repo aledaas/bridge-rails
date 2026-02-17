@@ -2,62 +2,51 @@
 
 namespace Aledaas\BridgeRails\Resources;
 
-use Aledaas\BridgeRails\BridgeClient;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 final class SignedAgreementsResource
 {
-    public function __construct(private readonly BridgeClient $client) {}
+    public function __construct() {}
 
     /**
-     * Bridge Dashboard endpoint (sandbox & prod):
-     * POST /dashboard/generate_signed_agreement_id
+     * Genera un signed_agreement_id (TOS v5) usando el endpoint dashboard.
      *
-     * Body example:
-     * {
-     *   "customer_id": "",
-     *   "type": "tos",
-     *   "version": "v5"
-     * }
+     * POST https://api.sandbox.bridge.xyz/dashboard/generate_signed_agreement_id
+     * body: {"customer_id":"","type":"tos","version":"v5"}
+     *
+     * Devuelve: ["signedAgreementId" => "..."] (según lo que viste en Network)
      */
-    public function generate(array $payload = []): array
-    {
-        $payload = array_merge([
-            'customer_id' => '',
+    public function generateTosSignedAgreementId(
+        string $version = 'v5',
+        ?string $customerId = null,
+        ?string $idempotencyKey = null
+    ): array {
+        $base = (string) config('bridge-rails.base_url'); // ej: https://api.sandbox.bridge.xyz/v0
+        $apiKey = (string) config('bridge-rails.api_key');
+
+        // sacamos el sufijo /v0 (o /v1) si existe
+        $dashboardBase = preg_replace('~/v\d+$~', '', rtrim($base, '/'));
+        $url = $dashboardBase . '/dashboard/generate_signed_agreement_id';
+
+        $idempotencyKey = $idempotencyKey ?: (string) Str::uuid();
+
+        $payload = [
+            'customer_id' => $customerId ?: '',
             'type' => 'tos',
-            'version' => 'v5',
-        ], $payload);
+            'version' => $version,
+        ];
 
-        return $this->client->post('/dashboard/generate_signed_agreement_id', $payload);
-    }
+        $resp = Http::timeout(20)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Api-Key' => $apiKey,
+                'Idempotency-Key' => $idempotencyKey,
+            ])
+            ->post($url, $payload);
 
-    /**
-     * Creates a customer ensuring signed_agreement_id exists.
-     * This removes friction for the user because the backend generates it automatically.
-     *
-     * - If payload already has signed_agreement_id, it uses it.
-     * - Otherwise, it calls /dashboard/generate_signed_agreement_id (type=tos, version=v5)
-     *   and injects the id into the payload.
-     */
-    public function createWithAutoSignedAgreement(array $payload, ?string $idempotencyKey = null): array
-    {
-        if (empty($payload['signed_agreement_id'])) {
-            $signed = $this->client->post('/dashboard/generate_signed_agreement_id', [
-                'customer_id' => '',
-                'type' => 'tos',
-                'version' => 'v5',
-            ]);
+        $resp->throw();
 
-            $signedAgreementId = $signed['signed_agreement_id'] ?? null;
-
-            if (!is_string($signedAgreementId) || $signedAgreementId === '') {
-                throw new \RuntimeException('Bridge did not return signed_agreement_id');
-            }
-
-            $payload['signed_agreement_id'] = $signedAgreementId;
-        }
-
-        // Reusa tu create() actual (si existe con idempotencyKey)
-        // Si tu create() NO recibe idempotencyKey, llamalo sin segundo parámetro.
-        return $this->create($payload, $idempotencyKey);
+        return $resp->json();
     }
 }
