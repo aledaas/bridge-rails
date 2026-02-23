@@ -35,7 +35,7 @@ class CustomersResource extends BaseResource
     public function createWithAutoSignedAgreement(array $payload, ?string $idempotencyKey = null): array
     {
         if (empty($payload['signed_agreement_id'])) {
-            $signed = $this->client->post(
+            $signed = $this->client->postNoPrefix(
                 '/dashboard/generate_signed_agreement_id',
                 [
                     'customer_id' => '',

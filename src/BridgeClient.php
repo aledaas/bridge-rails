@@ -42,6 +42,40 @@ class BridgeClient
         return $req;
     }
 
+    private function httpNoPrefix(string $method = 'GET', ?string $idempotencyKey = null): PendingRequest
+    {
+        $base = rtrim($this->baseUrl, '/');
+
+        $req = Http::baseUrl($base)
+            ->withHeaders([
+                'Api-Key' => $this->apiKey,
+                'Accept' => 'application/json',
+            ])
+            ->timeout($this->timeoutSeconds)
+            ->retry($this->retries, $this->retrySleepMs);
+
+        $methodUpper = strtoupper($method);
+
+        if (!empty($idempotencyKey) && $methodUpper === 'POST') {
+            $req = $req->withHeaders(['Idempotency-Key' => $idempotencyKey]);
+        }
+
+        return $req;
+    }
+
+    public function postNoPrefix(string $path, array $payload, ?string $idempotencyKey = null): array
+    {
+        $idempotencyKey ??= (string) Str::uuid();
+        $resp = $this->httpNoPrefix('POST', $idempotencyKey)->post($this->normalizePath($path), $payload);
+        return $this->handle($resp);
+    }
+
+    public function getNoPrefix(string $path, array $query = []): array
+    {
+        $resp = $this->httpNoPrefix('GET')->get($this->normalizePath($path), $query);
+        return $this->handle($resp);
+    }
+
     public function get(string $path, array $query = []): array
     {
         $resp = $this->http('GET')->get($this->normalizePath($path), $query);
