@@ -9,6 +9,7 @@ use Aledaas\BridgeRails\Resources\{BalancesResource,
     ExternalAccountsResource,
     FeesResource,
     IssuanceResource,
+    KycLinksResource,
     LiquidationAddressesResource,
     PlaidResource,
     PrefundedAccountsResource,
@@ -52,4 +53,5 @@ class Bridge
     {
         return new \Aledaas\BridgeRails\Resources\SignedAgreementsResource($this->client);
     }
+    public function kycLinks(): KycLinksResource { return new KycLinksResource($this->client); }
 }
